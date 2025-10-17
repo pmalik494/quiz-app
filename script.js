@@ -1,0 +1,163 @@
+const questions = [
+    {
+        question: "Which is the largest animal in the world?",
+        answers: [
+            { text: "Shark", correct: false },
+            { text: "Blue whale", correct: true },
+            { text: "Elephant", correct: false },
+            { text: "Giraffe", correct: false },
+        ]
+    },
+    {
+        question: "Which is the smallest country in the world?",
+        answers: [
+            { text: "Vatican City", correct: true },
+            { text: "Bhutan", correct: false },
+            { text: "Nepal", correct: false },
+            { text: "Sri Lanka", correct: false },
+        ]
+    },
+    {
+        question: "Which is the largest desert in the world?",
+        answers: [
+            { text: "Kalahari", correct: false },
+            { text: "Gobi", correct: false },
+            { text: "Sahara", correct: false },
+            { text: "Antarctica", correct: true },
+        ]
+    },
+    {
+        question: "Which is the smallest continent in the world?",
+        answers: [
+            { text: "Asia", correct: false },
+            { text: "Australia", correct: true },
+            { text: "Arctic", correct: false },
+            { text: "Africa", correct: false },
+        ]
+    }
+];
+
+const questionElement = document.getElementById("question");
+const answerButtons = document.getElementById("answer-buttons");
+const nextButton = document.getElementById("next-btn");
+const timerElement = document.getElementById("timer");
+const highScoreElement = document.getElementById("high-score");
+
+let shuffledQuestions = [];
+let currentQuestionIndex = 0;
+let score = 0;
+let highScore = 0;
+let timer;
+let timeLeft = 15;
+
+function startQuiz(){
+    score = 0;
+    shuffledQuestions = questions.sort(() => Math.random() - 0.5);
+    currentQuestionIndex = 0;
+    nextButton.innerHTML = "Next";
+    showQuestion();
+}
+
+function showQuestion(){
+    resetState();
+    let currentQuestion = shuffledQuestions[currentQuestionIndex];
+    let questionNo = currentQuestionIndex + 1;
+    questionElement.innerHTML = questionNo + ". " + currentQuestion.question;
+
+    currentQuestion.answers.forEach(answer => {
+        const button = document.createElement("button");
+        button.innerHTML = answer.text;
+        button.classList.add("btn");
+        answerButtons.appendChild(button);
+        if(answer.correct){
+            button.dataset.correct = answer.correct;
+        }
+        button.addEventListener("click", selectAnswer);
+    });
+
+    startTimer();
+}
+
+function resetState(){
+    nextButton.style.display = "none";
+    while(answerButtons.firstChild){
+        answerButtons.removeChild(answerButtons.firstChild);
+    }
+}
+
+function selectAnswer(e){
+    clearInterval(timer);
+    const selectedBtn = e.target;
+    const isCorrect = selectedBtn.dataset.correct === "true";
+    if(isCorrect){
+        selectedBtn.classList.add("correct");
+        score++;
+    } else {
+        selectedBtn.classList.add("incorrect");
+    }
+    Array.from(answerButtons.children).forEach(button => {
+        if(button.dataset.correct === "true"){
+            button.classList.add("correct");
+        }
+        button.disabled = true;
+    });
+    nextButton.style.display = "block";
+}
+
+function showScore(){
+    resetState();
+    questionElement.innerHTML = `You scored ${score} out of ${questions.length}!`;
+    
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("quizHighScore", highScore);
+        highScoreElement.innerHTML = `High Score: ${highScore}`;
+    }
+
+    nextButton.innerHTML = "Play Again";
+    nextButton.style.display = "block";
+}
+
+function handleNextButton(){
+    currentQuestionIndex++;
+    if(currentQuestionIndex < shuffledQuestions.length){
+        showQuestion();
+    } else {
+        showScore();
+    }
+}
+
+function startTimer() {
+    timeLeft = 15;
+    timerElement.innerHTML = timeLeft;
+    timer = setInterval(() => {
+        timeLeft--;
+        timerElement.innerHTML = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            Array.from(answerButtons.children).forEach(button => {
+                button.disabled = true;
+            });
+            nextButton.style.display = "block";
+        }
+    }, 1000);
+}
+
+function loadHighScore() {
+    const storedHighScore = localStorage.getItem("quizHighScore");
+    if (storedHighScore) {
+        highScore = parseInt(storedHighScore);
+    }
+    highScoreElement.innerHTML = `High Score: ${highScore}`;
+}
+
+nextButton.addEventListener("click", ()=>{
+    if(currentQuestionIndex < shuffledQuestions.length){
+        handleNextButton();
+    } else {
+        startQuiz();
+    }
+});
+
+loadHighScore();
+startQuiz();
